@@ -2,8 +2,10 @@ import os
 import sys
 import requests
 
-BASE_NGRAM_URL="http://storage.googleapis.com/books/ngrams/books/googlebooks-eng-us-all-2gram-20090715-{0}.csv.zip"
-DATA_DIR="./data"
+# BASE_NGRAM_URL = "http://storage.googleapis.com/books/ngrams/books/googlebooks-eng-us-all-2gram-20090715-{0}.csv.zip"
+BASE_NGRAM_URL = "http://storage.googleapis.com/books/ngrams/books/googlebooks-eng-all-2gram-20090715-{0}.csv.zip"
+DATA_DIR = "./data"
+
 
 def get_range(start_index, end_index):
 
@@ -20,9 +22,10 @@ def get_filename(url):
     filename = ""
 
     if url.find('/'):
-        filename=url.rsplit('/',1)[1]
+        filename = url.rsplit('/', 1)[1]
 
     return filename
+
 
 def download_file(url):
     filename = get_filename(url)
@@ -37,8 +40,6 @@ def download_file(url):
             for piece in response.iter_content(1024):
                 if piece:
                     file_handle.write(piece)
-
-
 
 
 if __name__ == "__main__":
