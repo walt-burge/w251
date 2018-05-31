@@ -2,7 +2,7 @@ import os
 import sys
 import requests
 
-BASE_NGRAM_URL="http://storage.googleapis.com/books/ngrams/books/googlebooks-eng-us-all-2gram-20090715-{}.csv.zip"
+BASE_NGRAM_URL="http://storage.googleapis.com/books/ngrams/books/googlebooks-eng-us-all-2gram-20090715-{0}.csv.zip"
 DATA_DIR="./data"
 
 def get_range(start_index, end_index):
