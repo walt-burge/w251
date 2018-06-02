@@ -34,7 +34,26 @@ def process_zip_file(zip_file_path, letters_words_counts):
                         # print("ngram: \"{}\", year: \"{}\", match_count: \"{}\", page_count: \"{}\", volume_count: \"{}\"".format(ngram, year, match_count, page_count, volume_count))
 
                         process_ngram(ngram, int(match_count), letters_words_counts)
+                    else:
+                        write_other_node_file(line)
 
+
+def write_other_node_file(line):
+
+    matched = False
+    PARSE_FILE_NAME_PATTERN = DATA_DIR+"/{}.{}.parse.csv"
+    IGNORED_LINES_PATTERN = DATA_DIR+"/ignored.lines.{}.csv"
+
+    for some_node_id, some_regex in other_nodes_regex.iteritems():
+
+        other_regex = re.compile(ngram_regex.format(some_regex, some_regex))
+        if other_regex.match(line):
+            matched = True
+            with open(PARSE_FILE_NAME_PATTERN.format(some_node_id, node_id), "w") as other_file:
+                other_file.write(line)
+    if not matched:
+        with open(IGNORED_LINES_PATTERN.format(node_id), "w") as ignored_file:
+            ignored_file.write(line)
 
 def process_ngram(ngram, match_count, letters_words_counts):
 
@@ -83,8 +102,11 @@ if __name__ == "__main__":
     global config
     global letters_words_counts
     global node_regex
+    global other_nodes_regex
 
     config = ConfigParser()
+    letters_words_counts = {}
+    other_nodes_regex = {}
 
     #config.add_section("node")
     #config.set("node", "regex", "[a-jA-J]")
@@ -101,7 +123,14 @@ if __name__ == "__main__":
         sys.exit(-1)
 
     try:
-        node_regex_conf = config.get("node","regex")
+        node_id = config.get("node","node_id")
+        node_regex_conf = config.get("patterns", node_id+".regex")
+        all_nodes = config.get("node", "all_nodes")
+        for some_node_id in all_nodes.split(","):
+            if not (node_id == some_node_id):
+                some_regex_conf = config.get("patterns", some_node_id+".regex")
+                other_nodes_regex[node_id] = some_regex_conf
+
     except Exception as e:
         print("Couldn't read config section and variable: "+str(e))
 
