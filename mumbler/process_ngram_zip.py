@@ -1,4 +1,4 @@
-import configparser.ConfigParser
+import configparser
 import json
 import os
 import re
@@ -11,10 +11,14 @@ DATA_DIR = "./data"
 ngram_regex = "(?P<ngram>{}+\ *{}*)\t(?P<year>\d+)\t(?P<match_count>\d+)\t(?P<page_count>\d+)\t(?P<volume_count>\d+)\n"
 initial_ngram_regex = "(?P<ngram>[a-zA-Z]+\ *[a-zA-Z]*ah)\t(?P<year>\d+)\t(?P<match_count>\d+)\t(?P<page_count>\d+)\t(?P<volume_count>\d+)\n"
 
-config = ConfigParser()
+node_regex = None
+
+config = configparser.ConfigParser()
 letters_words_counts = {}
 
 def process_zip_file(zip_file_path, letters_words_counts):
+    global node_regex
+
     ngram_regex = re.compile(
         "(?P<ngram>[a-zA-Z]+\ *[a-zA-Z]*ah)\t(?P<year>\d+)\t(?P<match_count>\d+)\t(?P<page_count>\d+)\t(?P<volume_count>\d+)\n")
     with zipfile.ZipFile(zip_file_path) as zip_file:
@@ -22,7 +26,9 @@ def process_zip_file(zip_file_path, letters_words_counts):
             with zip_file.open(csv_filename) as csv_file:
                 for line in csv_file:
                     line = str(line)
-                    reg_match = regex.match(line)
+
+
+                    reg_match = node_regex.match(line)
                     if reg_match:
                         ngram = reg_match.group('ngram')
                         year = reg_match.group('year')
@@ -78,10 +84,24 @@ def process_ngram(ngram, match_count, letters_words_counts):
 
 if __name__ == "__main__":
 
-    with open(DATA_DIR+"/parse_config.txt")
-    global reg_pattern =
+    global config
+    global letters_words_counts
+    global node_regex
 
-    global letters_words_counts = {}
+    config = configparser.RawConfigParser()
+    config.add_section("Node")
+    config.set("Node","regex", "[a-zA-Z]")
+    with open("./mumbler.parse.conf","w") as conf:
+        config.write(conf)
+
+    with open("./mumbler.parse.conf","r") as conf:
+        config.read(conf)
+
+    node_regex_conf = config.get("Node","regex")
+    print "node_regex_conf: "+ node_regex_conf
+    node_regex = re.compile(ngram_regex.format(node_regex_conf, node_regex_conf))
+
+    letters_words_counts = {}
     letters_words_counts["count"]=0
     letters_words_counts["next"]={}
 
