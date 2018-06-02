@@ -1,4 +1,4 @@
-import configparser
+from configparser import ConfigParser
 import json
 import os
 import re
@@ -84,17 +84,26 @@ if __name__ == "__main__":
     global letters_words_counts
     global node_regex
 
-    config = configparser.RawConfigParser()
+    config = ConfigParser()
 
-    config.add_section("node")
-    config.set("node", "regex", "[a-jA-J]")
-    with open("./mumbler.parse.conf","wb") as conf:
-        config.write(conf)
+    #config.add_section("node")
+    #config.set("node", "regex", "[a-jA-J]")
+    #with open("mumbler.parse.cfg","wb") as conf:
+    #    config.write(conf)
 
-    with open("./mumbler.parse.conf","rb") as conf:
-        config.read(conf)
+    if os.path.isfile("mumbler.parse.cfg"):
+        try:
+            config.read("mumbler.parse.cfg")
+        except Exception as e:
+            print("Couldn't read config file: "+str(e))
+    else:
+        print "mumbler.parse.cfg not found!"
+        sys.exit(-1)
 
-    node_regex_conf = config.get("node","regex")
+    try:
+        node_regex_conf = config.get("node","regex")
+    except Exception as e:
+        print("Couldn't read config section and variable: "+str(e))
 
     print "node_regex_conf: "+ node_regex_conf
     node_regex = re.compile(ngram_regex.format(node_regex_conf, node_regex_conf))
