@@ -161,6 +161,9 @@ if __name__ == "__main__":
     global config
     global letters_words_counts
 
+    reload(sys)
+    sys.setdefaultencoding('utf-8')
+
     read_config()
 
     node_id = config.get("node", "node_id")
