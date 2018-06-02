@@ -11,22 +11,18 @@ DATA_DIR = "./data"
 ngram_regex = "(?P<ngram>{}+\ *{}*)\t(?P<year>\d+)\t(?P<match_count>\d+)\t(?P<page_count>\d+)\t(?P<volume_count>\d+)\n"
 initial_ngram_regex = "(?P<ngram>[a-zA-Z]+\ *[a-zA-Z]*ah)\t(?P<year>\d+)\t(?P<match_count>\d+)\t(?P<page_count>\d+)\t(?P<volume_count>\d+)\n"
 
-node_regex = None
-
-config = configparser.ConfigParser()
-letters_words_counts = {}
+#node_regex = None
+#config = configparser.RawConfigParser()
+#letters_words_counts = {}
 
 def process_zip_file(zip_file_path, letters_words_counts):
     global node_regex
 
-    ngram_regex = re.compile(
-        "(?P<ngram>[a-zA-Z]+\ *[a-zA-Z]*ah)\t(?P<year>\d+)\t(?P<match_count>\d+)\t(?P<page_count>\d+)\t(?P<volume_count>\d+)\n")
     with zipfile.ZipFile(zip_file_path) as zip_file:
         for csv_filename in zip_file.namelist():
             with zip_file.open(csv_filename) as csv_file:
                 for line in csv_file:
                     line = str(line)
-
 
                     reg_match = node_regex.match(line)
                     if reg_match:
@@ -89,15 +85,17 @@ if __name__ == "__main__":
     global node_regex
 
     config = configparser.RawConfigParser()
-    config.add_section("Node")
-    config.set("Node","regex", "[a-zA-Z]")
-    with open("./mumbler.parse.conf","w") as conf:
+
+    config.add_section("node")
+    config.set("node", "regex", "[a-jA-J]")
+    with open("./mumbler.parse.conf","wb") as conf:
         config.write(conf)
 
-    with open("./mumbler.parse.conf","r") as conf:
+    with open("./mumbler.parse.conf","rb") as conf:
         config.read(conf)
 
-    node_regex_conf = config.get("Node","regex")
+    node_regex_conf = config.get("node","regex")
+
     print "node_regex_conf: "+ node_regex_conf
     node_regex = re.compile(ngram_regex.format(node_regex_conf, node_regex_conf))
 
