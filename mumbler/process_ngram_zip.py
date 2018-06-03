@@ -32,7 +32,7 @@ def process_zip_file(zip_file_path, letters_words_counts):
         for csv_filename in zip_file.namelist():
             with zip_file.open(csv_filename) as csv_file:
                 for line in csv_file:
-                    line = str(line)
+                    line = str(codecs.encode(line, "utf8"))
 
                     reg_match = node_regex.match(line)
                     if reg_match:
