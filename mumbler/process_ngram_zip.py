@@ -196,7 +196,7 @@ def split_by_letter(letter_words_counts):
 
     for letter, tree in letter_trees.iteritems():
         filepath = JSON_DIR+"/"+letter+"_tree."+node_id+"."+str(time.time())+".json"
-        with io.open(filepath, mode="w", encoding="utf-8") as dict_file:
+        with io.open(filepath, mode="w") as dict_file:
             dict_file.write(json.dumps(tree))
 
 
