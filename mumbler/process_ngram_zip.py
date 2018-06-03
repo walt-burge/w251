@@ -1,6 +1,7 @@
-import codecs
 from configparser import ConfigParser
 import glob
+import io
+from io import TextIOWrapper
 import json
 import os
 import re
@@ -30,14 +31,8 @@ def process_zip_file(zip_file_path, letters_words_counts):
 
     with zipfile.ZipFile(zip_file_path, "r") as zip_file:
         for csv_filename in zip_file.namelist():
-            with zip_file.open(csv_filename, "rU") as csv_file:
-                for line in codecs.iterdecode(csv_file,"utf8"):
-
-                    try:
-                        line = codecs.encode(line, "utf8")
-                    except UnicodeDecodeError as e:
-                        print "UnicodeDecodeError: "+ e.message
-                        print "line = \""+line + "\""
+            with zip_file.open(csv_filename, "r") as csv_file:
+                for line in TextIOWrapper(csv_file, "utf-8"):
 
                     reg_match = node_regex.match(line)
                     if reg_match:
@@ -84,8 +79,8 @@ def close_files():
     # iterate over all the JSON letter files, put them into zips and delete the original files
     zip_file_path = str(JSON_DIR+"/letter_trees." + node_id + "." + str(time.time()) + ".zip")
     for path in glob.glob(JSON_DIR+"/*_tree."+node_id+".*.json"):
-
-        with zipfile.ZipFile(zip_file_path, "a") as zip_file:
+        zip_file_path = path+".zip"
+        with zipfile.ZipFile(zip_file_path, "w") as zip_file:
             zip_file.write(path)
 
         os.remove(path)
@@ -105,6 +100,7 @@ def close_files():
 
         os.remove(ignored_specific_filename)
 
+
 def write_other_node_file(line):
 
     global ignored_lines_file
@@ -123,14 +119,14 @@ def write_other_node_file(line):
             other_node_csv_file = other_nodes_csv_files.get(some_node_id)
 
             if not other_node_csv_file:
-                other_node_csv_file = open(other_node_csv_file_path, "a+")
+                other_node_csv_file = io.open(other_node_csv_file_path, mode="a+", encoding="utf-8")
                 other_nodes_csv_files[some_node_id] = other_node_csv_file
 
             other_node_csv_file.write(line)
 
     if not matched:
         if not ignored_lines_file:
-            ignored_lines_file = codecs.open(IGNORED_LINES_PATTERN.format(node_id), "a+", encoding="utf8")
+            ignored_lines_file = io.open(IGNORED_LINES_PATTERN.format(node_id), mode="a+", encoding="utf-8")
         ignored_lines_file.write(line)
 
 def process_ngram(first_word, second_word, match_count, letters_words_counts):
@@ -200,7 +196,7 @@ def split_by_letter(letter_words_counts):
 
     for letter, tree in letter_trees.iteritems():
         filepath = JSON_DIR+"/"+letter+"_tree."+node_id+"."+str(time.time())+".json"
-        with codecs.open(filepath, "w", "utf8") as dict_file:
+        with io.open(filepath, mode="w", encoding="utf-8") as dict_file:
             dict_file.write(json.dumps(tree))
 
 
@@ -218,7 +214,7 @@ def read_config():
 
     if os.path.isfile("mumbler.parse.cfg"):
         try:
-            config.read("mumbler.parse.cfg",encoding="utf8")
+            config.read("mumbler.parse.cfg",encoding="utf-8")
         except Exception as e:
             print("Couldn't read config file: "+str(e))
     else:
@@ -260,7 +256,7 @@ if __name__ == "__main__":
 
     # Check if the node-specific dictionary JSON file exists and open for append if so
     if os.path.exists(json_file_name):
-        with open(json_file_name, "r") as json_file:
+        with io.open(json_file_name, mode="r") as json_file:
             letters_words_counts = json.load(json_file)
 
     # Otherwise, just create an empty dict to start
