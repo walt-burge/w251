@@ -34,7 +34,7 @@ def process_zip_file(zip_file_path, letters_words_counts):
                 for line in codecs.iterdecode(csv_file,"utf8"):
 
                     try:
-                        line = str(codecs.encode(line, "utf8"))
+                        line = codecs.encode(line, "utf8")
                     except UnicodeDecodeError as e:
                         print "UnicodeDecodeError: "+ e.message
                         print "line = \""+line + "\""
