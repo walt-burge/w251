@@ -30,8 +30,8 @@ def process_zip_file(zip_file_path, letters_words_counts):
 
     with zipfile.ZipFile(zip_file_path, "r") as zip_file:
         for csv_filename in zip_file.namelist():
-            with zip_file.open(csv_filename) as csv_file:
-                for line in csv_file:
+            with zip_file.open(csv_filename, "rU") as csv_file:
+                for line in codecs.iterdecode(csv_file,"utf8"):
 
                     try:
                         line = str(codecs.encode(line, "utf8"))
