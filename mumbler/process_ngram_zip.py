@@ -32,7 +32,7 @@ def process_zip_file(zip_file_path, letters_words_counts):
     with zipfile.ZipFile(zip_file_path, "r") as zip_file:
         for csv_filename in zip_file.namelist():
             with zip_file.open(csv_filename, "r") as csv_file:
-                for line in TextIOWrapper(csv_file, "utf-8"):
+                for line in TextIOWrapper(csv_file, encoding = "utf-8", errors="backslashreplace", newline=None):
 
                     reg_match = node_regex.match(line)
                     if reg_match:
@@ -196,9 +196,9 @@ def split_by_letter(letter_words_counts):
 
     for letter, tree in letter_trees.iteritems():
         filepath = JSON_DIR+"/"+letter+"_tree."+node_id+"."+str(time.time())+".json"
-        with io.open(filepath, mode="w") as dict_file:
-            dict_file.write(json.dumps(tree))
-
+        with io.open(filepath, mode="w", encoding="ascii") as dict_file:
+            json_string = json.dumps(tree)
+            dict_file.write(json_string)
 
 def read_config():
 
