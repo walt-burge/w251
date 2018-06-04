@@ -7,6 +7,7 @@ import numpy as np
 import numpy.random as rand
 import os
 import re
+import subprocess
 import sys
 import zipfile
 
@@ -17,7 +18,10 @@ DATA_DIR = "./data"
 # The following regex template matches a single starting character, specified per node, followed by any characters that would match for any node,
 # then optionally matches a space and any set of characters that would could be matched by any node, followed by year, match_count, page_count and
 # volume_count
-NGRAM_REGEX = "(?P<word1>{}+[a-zA-Z\.\'\"]*)(?P<word2> [a-zA-Z\.\'\"]*)?\t(?P<year>d+)\t(?P<match_count>d+)\t(?P<page_count>d+)\t(?P<volume_count>d+)"
+EMPTY_REGEX = "<empty(?P<word2>:[a-zA-Z\.\'\"]*)?"
+FORWARD_REGEX = "<forward:(?P<encoded_word>:\.*):(?P<node_id>\.[a-zA-Z0-9]*):(?P<max_words>[0-9]*)>"
+WORD_REGEX = "<(?P<encoded_word>\.*)>"
+
 
 def read_config():
 
@@ -209,11 +213,34 @@ def encode_word(word):
     return encoded_word
 
 
+def get_forward_node(word):
+
+    forward_node = None
+
+    for some_node_id, some_node_regex in nodes_regex.iteritems():
+        if re.match(some_node_regex, word[0]):
+            forward_node = some_node_id
+
+    return forward_node
+
+
+def forward_call(forward_node_id, first_word, max_words):
+    ssh = subprocess.Popen(["ssh", forward_node_id, "mumbler "+first_word+" "+str(max_words)],
+                           shell=False,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE)
+    result = ssh.stdout.readlines()
+
+    return result
+
+
 if __name__ == "__main__":
 
     read_config()
 
-    global node_regex
+    empty_regex = re.compile(EMPTY_REGEX)
+    forward_regex = re.compile(FORWARD_REGEX)
+    word_regex = re.compile(WORD_REGEX)
 
     first_word = sys.argv[1]
 
@@ -229,16 +256,34 @@ if __name__ == "__main__":
             usage();
             sys.exit(-1)
 
-        if (len(first_word) > 0):
-            if node_regex.match(first_word[0]):
+        if len(first_word) > 0:
+            forward_node_id = get_forward_node(first_word)
 
-                words = get_words(first_word, max_words-1, 100000000000)
-                print(first_word)
-                for word in words:
-                    if isinstance(word, response_msg):
-                        print word.to_string()
-                    else:
-                        print(word)
-            else:
-                ext_call = add_ext_call(first_word, max_words)
+            word = None
+            word_count = 0
+
+            while (word_count < max_words):
+
+                for word in forward_call(forward_node_id, first_word, max_words):
+
+                    if word_regex.match(word):
+                        encoded_word = word_regex.group("encoded_word")
+                        decoded_word = base64.b64decode(encoded_word)
+
+                        sys.stdout.write(" "+decoded_word)
+                        sys.stdout.flush()
+                        word_count += 1
+
+                if word & forward_regex.match(word):
+                    encoded_word = forward_regex.group("encoded_word")
+                    decoded_word = base64.b64decode(encoded_word)
+                    forward_node_id = forward_regex.group("node_id")
+                    max_words = forward_regex.group("max_words")
+                else:
+                    break
+
+
+
+
+
 
