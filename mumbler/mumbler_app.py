@@ -274,12 +274,17 @@ if __name__ == "__main__":
                         sys.stdout.flush()
                         word_count += 1
 
-                if word & forward_regex.match(word):
-                    encoded_word = forward_regex.group("encoded_word")
-                    decoded_word = base64.b64decode(encoded_word)
-                    forward_node_id = forward_regex.group("node_id")
-                    max_words = forward_regex.group("max_words")
+                if word:
+                    if forward_regex.match(word):
+                        encoded_word = forward_regex.group("encoded_word")
+                        decoded_word = base64.b64decode(encoded_word)
+                        forward_node_id = forward_regex.group("node_id")
+                        max_words = forward_regex.group("max_words")
+                    else:
+                        max_words = 0
+                        break
                 else:
+                    max_words = 0
                     break
 
 
