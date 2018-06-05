@@ -79,7 +79,7 @@ def process_zip_file(zip_file_path, letters_words_counts):
                                 process_ngram(word1, word2, int(match_count), letters_words_counts)
 
                             #Otherwise, the line is ignored
-                            
+
                         else:
                             write_other_node_file(line)
 
