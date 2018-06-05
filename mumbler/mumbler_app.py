@@ -18,9 +18,9 @@ DATA_DIR = "./data"
 # The following regex template matches a single starting character, specified per node, followed by any characters that would match for any node,
 # then optionally matches a space and any set of characters that would could be matched by any node, followed by year, match_count, page_count and
 # volume_count
-EMPTY_REGEX = "<empty(?P<word2>:[a-zA-Z\.\'\"]*)?"
-FORWARD_REGEX = "<forward:(?P<encoded_word>:\.*):(?P<node_id>\.[a-zA-Z0-9]*):(?P<max_words>[0-9]*)>"
-WORD_REGEX = "<(?P<encoded_word>\.*)>"
+EMPTY_REGEX = "<empty(?P<word2>:[a-zA-Z.'\"]*)?"
+FORWARD_REGEX = "<forward:(?P<encoded_word>.*):(?P<node_id>.[a-zA-Z0-9]*):(?P<max_words>[0-9]*)>"
+WORD_REGEX = "(?P<word>[a-zA-Z.'\"]*)"
 
 
 def read_config():
@@ -181,7 +181,15 @@ def get_words(current_word, num_words, total_count):
             words.append(add_ext_call(current_word, num_words-len(words)))
             break
 
-    return words
+    response_items = []
+
+    for item in words:
+        if isinstance(item, response_msg):
+            response_items.append(item.encode())
+        else:
+            response_items.append(item)
+
+    return response_items
 
 
 def get_weighted_choice(next_words, total_count):
@@ -224,12 +232,15 @@ def get_forward_node(word):
     return forward_node
 
 
+def ssh_call(forward_node_id, command):
+
+    result = subprocess.check_output(["ssh", "root@"+forward_node_id, command])
+
+    return result
+
+
 def forward_call(forward_node_id, first_word, max_words):
-    ssh = subprocess.Popen(["ssh", forward_node_id, "mumbler "+first_word+" "+str(max_words)],
-                           shell=False,
-                           stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE)
-    result = ssh.stdout.readlines()
+    result = ssh_call(forward_node_id, "cd /opt/w251/mumbler; python2.7 /opt/w251/mumbler/mumbler.py " + first_word + " " + str(max_words))
 
     return result
 
@@ -262,30 +273,30 @@ if __name__ == "__main__":
             word = None
             word_count = 0
 
-            while (word_count < max_words):
+            while word_count < max_words:
 
-                for word in forward_call(forward_node_id, first_word, max_words):
+                for word in forward_call(forward_node_id, first_word, max_words).split("\n"):
 
-                    if word_regex.match(word):
-                        encoded_word = word_regex.group("encoded_word")
-                        decoded_word = base64.b64decode(encoded_word)
-
-                        sys.stdout.write(" "+decoded_word)
-                        sys.stdout.flush()
-                        word_count += 1
-
-                if word:
-                    if forward_regex.match(word):
-                        encoded_word = forward_regex.group("encoded_word")
-                        decoded_word = base64.b64decode(encoded_word)
-                        forward_node_id = forward_regex.group("node_id")
-                        max_words = forward_regex.group("max_words")
+                    if word:
+                        forward_match = forward_regex.match(word)
+                        if forward_match:
+                            encoded_word = forward_match.group("encoded_word")
+                            decoded_word = base64.b64decode(encoded_word)
+                            forward_node_id = forward_match.group("node_id")
+                            max_words = forward_regex.match("max_words")
+                            break
+                        else:
+                            word_match = word_regex.match(word)
+                            if word_match:
+                                sys.stdout.write(" "+word)
+                                sys.stdout.flush()
+                                word_count += 1
+                            else:
+                                max_words = 0
+                                break
                     else:
                         max_words = 0
                         break
-                else:
-                    max_words = 0
-                    break
 
 
 

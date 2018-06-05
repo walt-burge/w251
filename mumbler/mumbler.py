@@ -66,6 +66,9 @@ class response_msg():
     def to_string(self):
         return "<>"
 
+    def encode(self):
+        return encode_word(word)
+
 
 class empty_msg(response_msg):
     def __init__(self, word):
@@ -81,6 +84,9 @@ class empty_msg(response_msg):
         str_val += ">"
 
         return str_val
+
+    def encode(self):
+        return self.to_string()
 
 
 class forward_msg(response_msg):
@@ -101,6 +107,10 @@ class forward_msg(response_msg):
         str_val += ">"
 
         return str_val
+
+    def encode(self):
+        return self.to_string()
+
 
 
 def add_ext_call(word, num_words):
@@ -236,9 +246,10 @@ if __name__ == "__main__":
                 print(first_word)
                 for word in words:
                     if isinstance(word, response_msg):
-                        print word.to_string()
+                        print word.encode()
                     else:
-                        print(word)
+                        print(encode_word(word))
             else:
                 ext_call = add_ext_call(first_word, max_words)
+
 
