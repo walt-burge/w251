@@ -77,8 +77,9 @@ def process_zip_file(zip_file_path, letters_words_counts):
                                 volume_count = reg_match.group('volume_count')
 
                                 process_ngram(word1, word2, int(match_count), letters_words_counts)
-                            else:
-                                print("Ignore line: \n"+line)
+
+                            #Otherwise, the line is ignored
+                            
                         else:
                             write_other_node_file(line)
 
