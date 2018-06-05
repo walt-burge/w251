@@ -25,7 +25,7 @@ compress_result_files = False
 # then optionally matches a space and any set of characters that would could be matched by any node, followed by year, match_count, page_count and
 # volume_count
 #NGRAM_REGEX_FORMAT = "(?P<word1>{}+[a-zA-Z]*)(?P<word2>[ ][a-zA-Z]*)?\t(?P<year>d+)\t(?P<match_count>d+)\t(?P<page_count>d+)\t(?P<volume_count>d+)"
-NGRAM_REGEX_FORMAT = "(?P<word1>[a-zA-Z\'\"\.]+[a-zA-Z\'\"\.]*) ?(?P<word2>[a-zA-Z\'\"\.]*)?\t(?P<year>\d+)\t(?P<match_count>\d+)\t(?P<page_count>\d+)\t(?P<volume_count>\d+)"
+NGRAM_REGEX_FORMAT = "(?P<word1>[a-zA-Z\'\"\.]+[a-zA-Z\'\"\.]*) ?(?P<word2>[a-zA-Z'\"\.]*)?\t(?P<year>\d+)\t(?P<match_count>\d+)\t(?P<page_count>\d+)\t(?P<volume_count>\d+)"
 
 
 def only_ascii(test_string):
@@ -57,24 +57,28 @@ def process_zip_file(zip_file_path, letters_words_counts):
                     # Discard non-ascii lines, for simplicity
                     if only_ascii(line):
                         #line = str(line)
-                        reg_match = ngram_regex.match(line)
 
                         # Also determine if the line should be parsed by this node
-                        reg_match = node_regex.match(line[0])
+                        letter_match = node_regex.match(line[0])
 
-                        if reg_match:
-                            word1 = reg_match.group('word1')
-                            word2 = reg_match.group('word2')
+                        if letter_match:
 
-                            # remove the leading space included by the regex
-                            word2 = word2[1:]
+                            reg_match = ngram_regex.match(line)
+                            if reg_match:
+                                word1 = reg_match.group('word1')
+                                word2 = reg_match.group('word2')
 
-                            year = reg_match.group('year')
-                            match_count = reg_match.group('match_count')
-                            page_count = reg_match.group('page_count')
-                            volume_count = reg_match.group('volume_count')
+                                # remove the leading space included by the regex
+                                word2 = word2[1:]
 
-                            process_ngram(word1, word2, int(match_count), letters_words_counts)
+                                year = reg_match.group('year')
+                                match_count = reg_match.group('match_count')
+                                page_count = reg_match.group('page_count')
+                                volume_count = reg_match.group('volume_count')
+
+                                process_ngram(word1, word2, int(match_count), letters_words_counts)
+                            else:
+                                print("Ignore line: \n"+line)
                         else:
                             write_other_node_file(line)
 
@@ -151,10 +155,10 @@ def write_other_node_file(line):
             other_node_csv_file = other_nodes_csv_files.get(some_node_id)
 
             if not other_node_csv_file:
-                other_node_csv_file = io.open(other_node_csv_file_path, mode="a+", encoding="ascii")
+                other_node_csv_file = io.open(other_node_csv_file_path, mode="a+", encoding="utf-8")
                 other_nodes_csv_files[some_node_id] = other_node_csv_file
 
-            other_node_csv_file.write(line)
+            other_node_csv_file.write(unicode(line,encoding="utf-8"))
 
     if (not matched) & save_ignored_lines:
         write_ignored_line(line, node_id)
