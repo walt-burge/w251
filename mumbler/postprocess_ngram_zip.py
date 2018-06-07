@@ -151,9 +151,9 @@ def collect_word_trees(node_id, node_dir, trees_dir):
                 json.dump(collected_words, json_file)
 
             if os.path.isfile(letter_words_zippath):
-                mode="a"
+                mode = "a"
             else:
-                mode="w"
+                mode = "w"
 
             with zipfile.ZipFile(letter_words_zippath, mode) as zip_file:
 
