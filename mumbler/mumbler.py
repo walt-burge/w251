@@ -144,10 +144,12 @@ def get_words_tree(word):
 
         words_tree_json_path = words_tree_folder + "/" + first_letter + "_tree.json"
         words_tree_zip_path = words_tree_json_path + ".zip"
-        with zipfile.ZipFile(words_tree_zip_path, "r", allowZip64=True) as zip_file:
-            for json_filename in zip_file.namelist():
-                with zip_file.open(json_filename) as words_tree_file:
-                    words_tree = json.load(words_tree_file)
+
+        if (os.path.exists(words_tree_zip_path)):
+            with zipfile.ZipFile(words_tree_zip_path, "r", allowZip64=True) as zip_file:
+                for json_filename in zip_file.namelist():
+                    with zip_file.open(json_filename) as words_tree_file:
+                        words_tree = json.load(words_tree_file)
 
     return words_tree
 
