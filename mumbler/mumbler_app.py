@@ -21,6 +21,7 @@ DATA_DIR = "./data"
 EMPTY_REGEX = "<empty(?P<word2>:[a-zA-Z.'\"]*)?"
 FORWARD_REGEX = "<forward:(?P<encoded_word>.*):(?P<node_id>.[a-zA-Z0-9]*):(?P<max_words>[0-9]*)>"
 WORD_REGEX = "(?P<word>[a-zA-Z.'\"]*)"
+ENCODED_WORD_REGEX = "<(?<encoded_word>[.]*)>"
 
 
 def read_config():
@@ -278,6 +279,13 @@ if __name__ == "__main__":
                 for word in forward_call(forward_node_id, first_word, max_words).split("\n"):
 
                     if word:
+
+                        encoded_match = re.match(word, ENCODED_WORD_REGEX)
+
+                        if encoded_match:
+                            encoded_word = encoded_match.group("encoded_word")
+                            word = base64.b64decode(encoded_word)
+
                         forward_match = forward_regex.match(word)
                         if forward_match:
                             encoded_word = forward_match.group("encoded_word")
