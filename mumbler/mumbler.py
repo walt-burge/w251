@@ -48,8 +48,8 @@ def read_config():
             some_regex_conf = str(config.get("patterns", some_node_id+".regex"))
             if (node_id == some_node_id):
                 node_regex_conf = some_regex_conf
-
-            nodes_regex[str(some_node_id)] = some_regex_conf
+            else:
+                nodes_regex[str(some_node_id)] = some_regex_conf
 
     except Exception as e:
         print("Couldn't read config section and variable: "+str(e))
@@ -142,11 +142,12 @@ def get_words_tree(word):
         if not re.match("[a-zA-Z]", first_letter):
             first_letter = "punct"
 
-        words_tree_path = words_tree_folder + "/" + first_letter + "_tree.json"
-        if os.path.exists(words_tree_path):
-
-            with io.open(words_tree_path, "r") as words_tree_file:
-                words_tree = json.load(words_tree_file)
+        words_tree_json_path = words_tree_folder + "/" + first_letter + "_tree.json"
+        words_tree_zip_path = words_tree_json_path + ".zip"
+        with zipfile.ZipFile(words_tree_zip_path, "r", allowZip64=True) as zip_file:
+            for json_filename in zip_file.namelist():
+                with zip_file.open(json_filename) as words_tree_file:
+                    words_tree = json.load(words_tree_file)
 
     return words_tree
 

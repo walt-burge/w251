@@ -288,6 +288,7 @@ if __name__ == "__main__":
     read_config()
 
     node_id = config.get("node", "node_id")
+    node_regex = config.get("")
 
     json_file_name = JSON_DIR+"/letters_words_counts."+node_id+".json"
 
