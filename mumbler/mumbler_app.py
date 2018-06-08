@@ -269,24 +269,34 @@ if __name__ == "__main__":
             sys.exit(-1)
 
         if len(first_word) > 0:
+
+
             forward_node_id = get_forward_node(first_word)
 
             word = None
             word_count = 0
 
+            sys.stdout.write(first_word)
+            sys.stdout.flush()
+            word_count += 1
+
             while word_count < max_words:
 
-                for word in forward_call(forward_node_id, first_word, max_words).split("\n"):
+                forward_call_response = forward_call(forward_node_id, first_word, max_words)
+                print "Forward call response: ",forward_call_response
+                for word in forward_call_response.split("\n"):
 
                     if word:
 
-                        encoded_match = re.match(word, ENCODED_WORD_REGEX)
+                        #encoded_match = re.match(word, ENCODED_WORD_REGEX)
 
-                        if encoded_match:
-                            encoded_word = encoded_match.group("encoded_word")
-                            word = base64.b64decode(encoded_word)
+                        #if encoded_match:
+                        #    encoded_word = encoded_match.group("encoded_word")
+                        #    word = base64.b64decode(encoded_word)
 
+                        word_match = re.match(word, ENCODED_WORD_REGEX)
                         forward_match = forward_regex.match(word)
+                        empty_match = empty_regex.match(word)
                         if forward_match:
                             encoded_word = forward_match.group("encoded_word")
                             decoded_word = base64.b64decode(encoded_word)
@@ -294,8 +304,10 @@ if __name__ == "__main__":
                             max_words = forward_regex.match("max_words")
                             break
                         else:
-                            word_match = word_regex.match(word)
+
                             if word_match:
+                                encoded_word = word_match.group("encoded_word")
+                                word = base64.b64decode(encoded_word)
                                 sys.stdout.write(" "+word)
                                 sys.stdout.flush()
                                 word_count += 1
