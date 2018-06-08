@@ -246,7 +246,7 @@ if __name__ == "__main__":
             if node_regex.match(first_word[0]):
 
                 words = get_words(first_word, max_words-1, 100000000000)
-                print(first_word)
+                print(encode_word(first_word))
                 for word in words:
                     if isinstance(word, response_msg):
                         print word.encode()
