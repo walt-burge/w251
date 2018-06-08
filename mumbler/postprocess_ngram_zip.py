@@ -130,11 +130,12 @@ def collect_word_trees(node_id, node_dir, trees_dir):
 
                         if next_words:
                             for another_word, another_entry in next_words.iteritems():
-                                if another_word in existing_next_words.iterkeys():
-                                    existing_next_entry = existing_next_words.get(another_word)
-                                    existing_next_entry["count"] = existing_next_entry.get("count") + another_entry.get("count")
-                                else:
-                                    existing_next_words[another_word] = another_entry
+                                if another_word:
+                                    if another_word in existing_next_words.iterkeys():
+                                        existing_next_entry = existing_next_words.get(another_word)
+                                        existing_next_entry["count"] = existing_next_entry.get("count") + another_entry.get("count")
+                                    else:
+                                        existing_next_words[another_word] = another_entry
                     else:
                         collected_words[new_word] = letter_tree.get(new_word)
 
