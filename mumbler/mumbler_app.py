@@ -18,10 +18,10 @@ DATA_DIR = "./data"
 # The following regex template matches a single starting character, specified per node, followed by any characters that would match for any node,
 # then optionally matches a space and any set of characters that would could be matched by any node, followed by year, match_count, page_count and
 # volume_count
-EMPTY_REGEX = "<empty(?P<word2>:[a-zA-Z.'\"]*)?"
-FORWARD_REGEX = "<forward:(?P<encoded_word>.*):(?P<node_id>.[a-zA-Z0-9]*):(?P<max_words>[0-9]*)>"
+EMPTY_REGEX = "<empty(?P<word2>:[a-zA-Z0-9/+]*)?>"
+FORWARD_REGEX = "<forward:(?P<encoded_word>[a-zA-Z0-9/+]*):(?P<node_id>.[a-zA-Z0-9]*):(?P<max_words>[0-9]*)>"
 WORD_REGEX = "(?P<word>[a-zA-Z.'\"]*)"
-ENCODED_WORD_REGEX = "<(?<encoded_word>[.]*)>"
+ENCODED_WORD_REGEX = "<(?P<encoded_word>[a-zA-Z0-9/+]*)>"
 
 
 def read_config():
@@ -252,7 +252,7 @@ if __name__ == "__main__":
 
     empty_regex = re.compile(EMPTY_REGEX)
     forward_regex = re.compile(FORWARD_REGEX)
-    word_regex = re.compile(WORD_REGEX)
+    encoded_word_regex = re.compile(ENCODED_WORD_REGEX)
 
     first_word = sys.argv[1]
 
@@ -283,18 +283,21 @@ if __name__ == "__main__":
             while word_count < max_words:
 
                 forward_call_response = forward_call(forward_node_id, first_word, max_words)
-                print "Forward call response: ",forward_call_response
+                print "\n...........\nForward call response: ",forward_call_response
+                print "\n...........\n"
                 for word in forward_call_response.split("\n"):
 
                     if word:
 
+                        print "\n...........\nEvaluating word: ",word
+                        print "\n...........\n"
                         #encoded_match = re.match(word, ENCODED_WORD_REGEX)
 
                         #if encoded_match:
                         #    encoded_word = encoded_match.group("encoded_word")
                         #    word = base64.b64decode(encoded_word)
 
-                        word_match = re.match(word, ENCODED_WORD_REGEX)
+                        word_match = encoded_word_regex.match(word)
                         forward_match = forward_regex.match(word)
                         empty_match = empty_regex.match(word)
                         if forward_match:
