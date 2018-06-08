@@ -253,6 +253,7 @@ if __name__ == "__main__":
                     else:
                         print(encode_word(word))
             else:
+                print "adding an ext call: firstword = {}, max_words = {}".format(first_word, max_words)
                 ext_call = add_ext_call(first_word, max_words)
 
 
