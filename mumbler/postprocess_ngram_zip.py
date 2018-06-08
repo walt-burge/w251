@@ -128,7 +128,7 @@ def collect_word_trees(node_id, node_dir, trees_dir):
                         existing_next_words = existing_word.get("next")
                         next_words = new_word_entry.get("next")
 
-                        if next_words:
+                        if (next_words != None) and (existing_next_words != None):
                             for another_word, another_entry in next_words.iteritems():
                                 if another_word:
                                     if another_word in existing_next_words.iterkeys():
