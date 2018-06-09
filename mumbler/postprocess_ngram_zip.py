@@ -159,7 +159,7 @@ def collect_word_trees(node_id, node_dir, trees_dir):
             with zipfile.ZipFile(letter_words_zippath, mode) as zip_file:
 
                 if not letter_words_filename in zip_file.filelist:
-                    zip_file.write(letter_words_filepath, arcname=letter_words_filepath)
+                    zip_file.write(letter_words_filepath, arcname=letter_words_filename)
 
             os.remove(letter_words_filepath)
 
