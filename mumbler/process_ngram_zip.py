@@ -24,7 +24,6 @@ compress_result_files = False
 # The following regex template matches a single starting character, specified per node, followed by any characters that would match for any node,
 # then optionally matches a space and any set of characters that would could be matched by any node, followed by year, match_count, page_count and
 # volume_count
-#NGRAM_REGEX_FORMAT = "(?P<word1>{}+[a-zA-Z]*)(?P<word2>[ ][a-zA-Z]*)?\t(?P<year>d+)\t(?P<match_count>d+)\t(?P<page_count>d+)\t(?P<volume_count>d+)"
 NGRAM_REGEX_FORMAT = "(?P<word1>[a-zA-Z\'\"\.]+[a-zA-Z\'\"\.]*) ?(?P<word2>[a-zA-Z'\"\.]*)?\t(?P<year>\d+)\t(?P<match_count>\d+)\t(?P<page_count>\d+)\t(?P<volume_count>\d+)"
 
 
