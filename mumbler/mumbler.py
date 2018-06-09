@@ -66,8 +66,11 @@ class response_msg():
     def to_string(self):
         return "<>"
 
-    def encode(self):
-        return encode_word(word)
+    def render(self):
+        if word:
+            return "<response_msg:"+encode_word(self.word)+">"
+        else:
+            return "<response_msg:>"
 
 
 class empty_msg(response_msg):
@@ -85,7 +88,7 @@ class empty_msg(response_msg):
 
         return str_val
 
-    def encode(self):
+    def render(self):
         return self.to_string()
 
 
@@ -108,7 +111,7 @@ class forward_msg(response_msg):
 
         return str_val
 
-    def encode(self):
+    def render(self):
         return self.to_string()
 
 
@@ -218,7 +221,10 @@ def usage():
 
 
 def encode_word(word):
+    print("\n------------\n")
+    print("encode_word("+word+")")
     encoded_word = "<" + base64.b64encode(word) + ">"
+    print("...returning \""+encoded_word+"\"")
     return encoded_word
 
 
@@ -249,7 +255,7 @@ if __name__ == "__main__":
                 print(encode_word(first_word))
                 for word in words:
                     if isinstance(word, response_msg):
-                        print word.encode()
+                        print word.render()
                     else:
                         print(encode_word(word))
             else:
