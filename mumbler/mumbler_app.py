@@ -18,10 +18,10 @@ DATA_DIR = "./data"
 # The following regex template matches a single starting character, specified per node, followed by any characters that would match for any node,
 # then optionally matches a space and any set of characters that would could be matched by any node, followed by year, match_count, page_count and
 # volume_count
-EMPTY_REGEX = "<empty(?P<word2>:[a-zA-Z0-9/+]*)?>"
-FORWARD_REGEX = "<forward:(?P<encoded_word>[a-zA-Z0-9/+]*):(?P<node_id>.[a-zA-Z0-9]*):(?P<max_words>[0-9]*)>"
+EMPTY_REGEX = "<empty(?P<word2>:[a-zA-Z0-9/+]*[=]*)?>"
+FORWARD_REGEX = "<forward:(?P<encoded_word>[a-zA-Z0-9/+]*[=]*):(?P<node_id>.[a-zA-Z0-9]*):(?P<max_words>[0-9]*)>"
 WORD_REGEX = "(?P<word>[a-zA-Z.'\"]*)"
-ENCODED_WORD_REGEX = "<(?P<encoded_word>[a-zA-Z0-9/+]*)>"
+ENCODED_WORD_REGEX = "<(?P<encoded_word>[a-zA-Z0-9/+]*[=]*)>"
 
 
 def read_config():
