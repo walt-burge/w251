@@ -28,11 +28,7 @@ compress_result_files = False
 # The following regex template matches a single starting character, specified per node, followed by any characters that would match for any node,
 # then optionally matches a space and any set of characters that would could be matched by any node, followed by year, match_count, page_count and
 # volume_count
-#NGRAM_REGEX_FORMAT = "(?P<word1>{}+[a-zA-Z]*)(?P<word2>[ ][a-zA-Z]*)?\t(?P<year>d+)\t(?P<match_count>d+)\t(?P<page_count>d+)\t(?P<volume_count>d+)"
 NGRAM_REGEX_FORMAT = "(?P<word1>[a-zA-Z\'\"\.]+[a-zA-Z\'\"\.]*) ?(?P<word2>[a-zA-Z'\"\.]*)?\t(?P<year>\d+)\t(?P<match_count>\d+)\t(?P<page_count>\d+)\t(?P<volume_count>\d+)"
-
-
-
 
 
 def read_config():
@@ -83,34 +79,46 @@ def age_greater_than(file_path, age, start_time):
 
 def collect_word_trees(node_id, node_dir, trees_dir):
 
-    COMPONENT_JSON_FILE_PATTERN = r"[a-z]_tree."+node_id+"\.\d+\.\d+\.json"
-    component_file_pattern = re.compile(COMPONENT_JSON_FILE_PATTERN)
+    global node_regex
+
+    COMPONENT_JSON_FILE_PATTERN = '(?P<letter>[a-z]+)_tree.{}.*json'.format(node_id)
+
+    # The following pattern is for matching any "punct_...json" file on any node
+    PUNCT_FILE_PATTERN = 'punct.*.{}.*json'.format(node_id)
+
+    component_file_regex = re.compile(COMPONENT_JSON_FILE_PATTERN)
+    punct_regex = re.compile(PUNCT_FILE_PATTERN)
     forest = {}
 
     # counter of files collected into the forest
-    fragment_count = 0
+    json_fragment_count = 0
 
     for root, dirs, files in os.walk(node_dir):
 
         for json_file in files:
 
-            # select only the files matching <letter>_gpfs?.<time_seconds>
-            if (node_regex.match(json_file[0]) is not None) & (component_file_pattern.match(json_file) is not None):
+            node_match = node_regex.match(json_file[0])
+            punct_match = punct_regex.match(json_file)
+            component_file_match = component_file_regex.match(json_file)
 
-                    letter_files = forest.get(json_file[0])
-                    if not letter_files:
-                        letter_files = []
-                        forest[json_file[0]] = letter_files
+            # select only the files matching this node's first letters (or 'punct') and node_id, ending in .json
+            if (punct_match or node_match) and component_file_match:
 
-                    letter_files.append(json_file)
+                first_letter = component_file_match.group('letter')
+                letter_files = forest.get(first_letter)
+                if not letter_files:
+                    letter_files = []
+                    forest[first_letter] = letter_files
+
+                letter_files.append(json_file)
 
     for first_letter in forest.iterkeys():
         collected_words = {}
 
+        # This is a counter of json files for the current word.
+        # It will be added to the total fragment_count, if the zip file is written.
         letter_files = forest.get(first_letter)
         for json_file in letter_files:
-
-            fragment_count += 1
 
             file_path = node_dir + "/" + json_file
 
@@ -163,8 +171,10 @@ def collect_word_trees(node_id, node_dir, trees_dir):
 
             os.remove(letter_words_filepath)
 
-    return fragment_count, len(forest)
+            # Increment the fragment_count, having moved one of the JSON files in to a zip
+            json_fragment_count += 1
 
+    return json_fragment_count, len(forest)
 
 
 def move_matched_files(node_id, node_dir, node_regex):
