@@ -20,7 +20,7 @@ DATA_DIR = "./data"
 # volume_count
 EMPTY_REGEX = "<empty(?P<word2>:[a-zA-Z0-9/+]*[=]*)?>"
 FORWARD_REGEX = "<forward:(?P<encoded_word>[a-zA-Z0-9/+]*[=]*):(?P<node_id>.[a-zA-Z0-9]*):(?P<max_words>[0-9]*)>"
-WORD_REGEX = "(?P<word>[a-zA-Z.'\"]*)"
+WORD_REGEX = "(?P<word>[a-zA-Z\.\'\"]*)"
 ENCODED_WORD_REGEX = "<(?P<encoded_word>[a-zA-Z0-9/+]*[=]*)>"
 
 
