@@ -1,4 +1,4 @@
-#!/usr/local/bin/python2.7
+#!python2.7
 from configparser import ConfigParser
 import glob
 import io
@@ -68,9 +68,6 @@ def process_zip_file(zip_file_path, letters_words_counts):
                                 word1 = reg_match.group('word1')
                                 word2 = reg_match.group('word2')
 
-                                # remove the leading space included by the regex
-                                word2 = word2[1:]
-
                                 year = reg_match.group('year')
                                 match_count = reg_match.group('match_count')
                                 page_count = reg_match.group('page_count')
@@ -109,7 +106,7 @@ def close_files():
             os.rename(path, specific_path)
 
             with zipfile.ZipFile(zip_file_path, "a", allowZip64=True) as zip_file:
-                zip_file.write(specific_path, basename(specific_path))
+                zip_file.write(specific_path, arcname=basename(specific_path))
 
             os.remove(specific_path)
 
@@ -118,7 +115,7 @@ def close_files():
 
             zip_file_path = path+".zip"
             with zipfile.ZipFile(zip_file_path, "w", allowZip64=True) as zip_file:
-                zip_file.write(path, basename(path))
+                zip_file.write(path, arcname=basename(path))
 
             os.remove(path)
 
@@ -133,7 +130,7 @@ def close_files():
         os.rename(ignored_lines_filename, ignored_specific_filename)
 
         with zipfile.ZipFile(ignored_zip, "a", allowZip64=True) as zip_file:
-            zip_file.write(ignored_specific_filename, basename(ignored_specific_filename))
+            zip_file.write(ignored_specific_filename, arcname=basename(ignored_specific_filename))
 
         os.remove(ignored_specific_filename)
 
