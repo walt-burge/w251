@@ -41,8 +41,8 @@ def write_ignored_line(line, node_id):
 
 
 def process_zip_file(zip_file_path, letters_words_counts):
-    global node_regex
     global ignored_lines_file
+    global node_regex
 
     # The following regex will be used for matching all lines with ngrams in English including optional . ' and "
     ngram_regex = re.compile(NGRAM_REGEX_FORMAT)
@@ -288,7 +288,6 @@ if __name__ == "__main__":
     read_config()
 
     node_id = config.get("node", "node_id")
-    node_regex = config.get("patterns", node_id+".regex")
 
     json_file_name = JSON_DIR+"/letters_words_counts."+node_id+".json"
 
