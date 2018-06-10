@@ -35,6 +35,7 @@ def read_config():
             config.read("mumbler.parse.cfg")
         except Exception as e:
             print("Couldn't read config file: "+str(e))
+            sys.exit(-1)
     else:
         print "mumbler.parse.cfg not found!"
         sys.exit(-1)
@@ -53,6 +54,7 @@ def read_config():
 
     except Exception as e:
         print("Couldn't read config section and variable: "+str(e))
+        sys.exit(-1)
 
     node_regex = re.compile(node_regex_conf)
 
@@ -219,12 +221,8 @@ def get_weighted_choice(next_words, total_count):
 def usage():
     print("\nUsage: python mumbler <starting_word> <max # of words>\n")
 
-
 def encode_word(word):
-    print("\n------------\n")
-    print("encode_word("+word+")")
     encoded_word = "<" + base64.b64encode(word) + ">"
-    print("...returning \""+encoded_word+"\"")
     return encoded_word
 
 
@@ -259,7 +257,6 @@ if __name__ == "__main__":
                     else:
                         print(encode_word(word))
             else:
-                print "adding an ext call: firstword = {}, max_words = {}".format(first_word, max_words)
                 ext_call = add_ext_call(first_word, max_words)
 
 
