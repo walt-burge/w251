@@ -1,0 +1,1 @@
+sbt -v --warn package
