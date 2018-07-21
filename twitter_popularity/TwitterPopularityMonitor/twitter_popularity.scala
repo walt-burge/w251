@@ -8,9 +8,13 @@ import org.apache.spark.rdd.RDD
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.Dataset
+import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types._
+
+import scala.collection.mutable.WrappedArray
+
 
 import twitter4j.Status
 import twitter4j.User
@@ -19,28 +23,64 @@ import twitter4j.User
 
 object TwitterPopularityMonitor extends App {
 
-    def remapHashtagsTweeter(status:Status) : Seq[(String, String)] = {
-        val tweetUser = status.getUser.getScreenName()
-        val hashtags = status.getText.split(" ").filter(_.startsWith("#"))
+    // These two values are the configured windows over which tweets will be collected for display
+    val LONGER_SECONDS = 120000
+    val SHORTER_SECONDS = 5000
 
-        return hashtags.map(hashtag => (hashtag, tweetUser)).toSeq
+
+    // Utility function for string mapping - details with Array[Any] results that are problematic to handle
+    def mapArray(initial:String, inputArray : Array[Any], prefix:String) : String = {
+	val outputBuilder = new StringBuilder("")
+        for (item<-inputArray) {
+		outputBuilder.append(" ")
+		outputBuilder.append(initial)
+ 		outputBuilder.append(prefix)
+		outputBuilder.append(item)
+	}
+
+	return outputBuilder.toString()
     }
 
-    case class Tweet(hashTweet: Array[String], user:String, refs: Array[String])
-        
+
+    // Get a list of users recorded as having tweeted a given hashtag, from within the tweets detail DataFrame recently collected
+    def getUsers(hashtag:String) : String = {
+	val userNamesResult = spark.sql("SELECT userName FROM hashtagDetail WHERE hashtag='%s'".format(hashtag)).rdd.map(r => r(0)).collect()
+	return mapArray("tweeters: ", userNamesResult, "")
+    }
+
+
+
+    // Get a list of users referenced within tweets with a given hashtag, from within the tweets detail DataFrame recently collected
+    def getRefs(hashtag:String) : String = {
+	val refsResult = spark.sql("SELECT refs FROM hashtagDetail WHERE hashtag='%s'".format(hashtag)).rdd.map(r => r(0)).collect()
+	return mapArray("tweet refs: ", refsResult, "")
+    }
+
+
+    // This case class will be used for mapping from a spark.streaming.DStream to a spark.sql.RDD, for collection in a DataFrame
+    case class Tweet(hashTweet: Array[String], userName:String, refs: Array[String])
+
+
+    // Translate an obeserved tweet into a <Tweet> object, with fields including hashtags, user and references
     def Record(status:Status) : Tweet = {
 	val userObj = status.getUser()
 	val userName = if ( userObj != null ) { userObj.getScreenName() } else { null }
 
 	val tmpHashtags = status.getText.split(" ").filter(_.startsWith("#"))
-	val hashtags = if (tmpHashtags.length > 0) { tmpHashtags } else { null }
+	val hashtags = if (tmpHashtags.size > 0) { tmpHashtags } else { null }
 
 	val tmpTweetRefs = status.getText.split(" ").filter(_.startsWith("@"))
-	val tweetRefs = if (tmpTweetRefs.length > 0) { tmpTweetRefs } else { null }
+	val tweetRefs = if (tmpTweetRefs.size > 0) { tmpTweetRefs } else { null }
 
 	return Tweet(hashtags, userName, tweetRefs)
     }
-        
+
+
+    // **************************************
+    // Here's where the main processing starts:
+    // **************************************
+
+    // Validate parameters, ensuring that all the Twitter credential keys are supplied at the command line       
     if (args.length < 4) {
       System.err.println("Usage: TwitterPopularityMonitor <consumer key> <consumer secret> " +
         "<access token> <access token secret> [<filters>]")
@@ -52,6 +92,8 @@ object TwitterPopularityMonitor extends App {
       Logger.getRootLogger.setLevel(Level.WARN)
     }
 
+
+    // Collect the Twitter credentials
     val Array(consumerKey, consumerSecret, accessToken, accessTokenSecret) = args.take(4)
     val filters = args.takeRight(args.length - 4)
 
@@ -69,58 +111,68 @@ object TwitterPopularityMonitor extends App {
       sparkConf.setMaster("local[2]")
     }
 
+
+    // Setup the Spark Streaming Context for a Twitter Feed
     val ssc = new StreamingContext(sparkConf, Seconds(2))
     val stream = TwitterUtils.createStream(ssc, None, filters)
 
-    val hashTags = stream.flatMap(status => status.getText.split(" ").filter(_.startsWith("#")))
-    //val hashtagsTweetRefs = stream.transform(status => Record(status))
 
-    // Get the sqlContext from the stream?
+
+    // **************************************
+    // Here's where the logic starts for mapping the tweet stream into collections and windows
+    // **************************************
+
+    // Create a map of hashtags in tweets
+    val hashTags = stream.flatMap(status => status.getText.split(" ").filter(_.startsWith("#")))
+
     // Get the singleton instance of SparkSession
-    //val spark = SparkSession.builder.config(sparkConf).getOrCreate() 
-    //import spark.implicits._
     val spark= SparkSession.builder().getOrCreate()
     import spark.implicits._
 
+    // Map the stream of tweets into a stream of <Tweet> objects
     val hashtagsTweetRefs = stream.map(status => Record(status))
 
+
+    // Iterate through the collected <Tweet> objects, creating spark.sql DataFrames to map these to collectable detail
     hashtagsTweetRefs.foreachRDD{ tweet =>
 	// Get the singleton instance of SparkSession
-	val spark = SparkSession.builder.config(tweet.sparkContext.getConf).getOrCreate()
-	import spark.implicits._
+	//val spark = SparkSession.builder.config(tweet.sparkContext.getConf).getOrCreate()
+	//import spark.implicits._
 
-	val tweetDF = tweet.toDF("hashtags", "user", "refs")
-
-	// Create a temporary view
+	val tweetDF = tweet.toDF("hashtags", "userName", "refs")
 	tweetDF.createOrReplaceTempView("tweets")
-
-	val summaryDF = spark.sql("SELECT * from tweets WHERE LENGTH(hashtags)>0")
-	print("SummaryDF: ")
-	summaryDF.show()
+	val summaryDF = spark.sql("SELECT explode(hashtags) hashtag, userName, refs from tweets")
+	summaryDF.createOrReplaceTempView("hashtagSummary")
+	val detailDF = spark.sql("SELECT hashtag, userName, explode(refs) refs from hashtagSummary")
+	detailDF.createOrReplaceTempView("hashtagDetail")
     }
 
-    val topCounts60 = hashTags.map((_, 1)).reduceByKeyAndWindow(_ + _, Seconds(60))
+
+    // This collects tweets with the longer configured window
+    val topCountsLonger = hashTags.map((_, 1)).reduceByKeyAndWindow(_ + _, Seconds(LONGER_SECONDS))
                      .map{case (topic, count) => (count, topic)}
                      .transform(_.sortByKey(false))
 
 
-    val topCounts10 = hashTags.map((_, 1)).reduceByKeyAndWindow(_ + _, Seconds(10))
+    // This collects tweets with the shorter configured window
+    val topCountsShorter = hashTags.map((_, 1)).reduceByKeyAndWindow(_ + _, Seconds(SHORTER_SECONDS))
                      .map{case (topic, count) => (count, topic)}
                      .transform(_.sortByKey(false))
 
 
     // Print popular hashtags
-    topCounts60.foreachRDD(rdd => {
+    topCountsLonger.foreachRDD(rdd => {
       val topList = rdd.take(10)
-      println("\nPopular topics in last 60 seconds (%s total):".format(rdd.count()))
+      println("\nPopular topics in last %s milliseconds (%s total):".format(LONGER_SECONDS, rdd.count()))
 
-      topList.foreach{case (count, hashtag) => { val tweeters=null; val tweetrefs=null; println("%s (%s tweets), tweeters: %s, tweetrefs: %s".format(hashtag, count, tweeters, tweetrefs))}}
+      topList.foreach{case (count, hashtag) => { val tweeters=getUsers(hashtag); val tweetrefs=getRefs(hashtag); println("%s (%s tweets) %s %s".format(hashtag, count, tweeters, tweetrefs))}}
     })
 
-    topCounts10.foreachRDD(rdd => {
+    topCountsShorter.foreachRDD(rdd => {
       val topList = rdd.take(10)
-      println("\nPopular topics in last 10 seconds (%s total):".format(rdd.count()))
-      topList.foreach{case (count, tag) => println("%s (%s tweets)".format(tag, count))}
+      println("\nPopular topics in last %s milliseconds (%s total):".format(SHORTER_SECONDS, rdd.count()))
+      
+      topList.foreach{case (count, hashtag) => { val tweeters=getUsers(hashtag); val tweetrefs=getRefs(hashtag); println("%s (%s tweets) %s %s".format(hashtag, count, tweeters, tweetrefs))}}
     })
 
     ssc.start()
